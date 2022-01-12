@@ -1,0 +1,7 @@
+name: env
+dependencies:
+  - python=3.8
+  - mesa
+  - numpy
+  - tornado
+  - pandas

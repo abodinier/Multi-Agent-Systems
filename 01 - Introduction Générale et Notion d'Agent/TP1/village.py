@@ -14,6 +14,17 @@ from mesa.time import RandomActivation
 from mesa.visualization.ModularVisualization import ModularServer, VisualizationElement
 from mesa.visualization.modules import ChartModule
 
+ENTITIES_COLOR = {
+    "villager": "blue",
+    "lycanthrope": "red",
+    "cleric": "green"
+}
+ENTITIES_SIZES = {
+    "villager": 3,
+    "lycanthrope": 6,
+    "cleric": 3
+}
+
 class ContinuousCanvas(VisualizationElement):
     local_includes = [
         "./js/simple_continuous_canvas.js",
@@ -52,40 +63,175 @@ def wander(x, y, speed, model):
     return new_x, new_y
 
 class  Village(mesa.Model):
-    def  __init__(self,  n_villagers):
+    def  __init__(self,  n_villagers, n_lycanthropes, n_cleric):
         mesa.Model.__init__(self)
         self.space = mesa.space.ContinuousSpace(600, 600, False)
         self.schedule = RandomActivation(self)
-        for  _  in  range(n_villagers):
-            self.schedule.add(Villager(random.random()  *  600,  random.random()  *  600,  10, random.randint(1,  600), self))
+        
+        n_tot = n_villagers + n_lycanthropes + n_cleric
+        list_tot = [i for i in range(n_tot)]
+        
+        lycanthropes_indices = sorted(
+            np.random.choice(
+                list_tot,
+                size=n_lycanthropes,
+                replace=False)
+        )
+        
+        cleric_indices = sorted(
+            np.random.choice(
+                list(set(list_tot) - set(lycanthropes_indices)),
+                size=n_cleric,
+                replace=False)
+        )
+        
+        for  i  in  range(n_tot):
+            
+            is_cleric = i in cleric_indices
+            is_lycanthrope = i in lycanthropes_indices
+            
+            if is_cleric:
+                entity = "cleric"
+                self.schedule.add(
+                Cleric(
+                    x=random.random()  *  600,
+                    y=random.random()  *  600,
+                    speed=10,
+                    unique_id=uuid.uuid1(),
+                    model=self,
+                    entity=entity
+                )
+            )
+            if is_lycanthrope:
+                entity = "lycanthrope"
+                self.schedule.add(
+                    Villager(
+                        x=random.random()  *  600,
+                        y=random.random()  *  600,
+                        speed=10,
+                        unique_id=uuid.uuid1(),
+                        model=self,
+                        entity=entity
+                    )
+                )
+            else:
+                entity = "villager"
+                self.schedule.add(
+                    Villager(
+                        x=random.random()  *  600,
+                        y=random.random()  *  600,
+                        speed=10,
+                        unique_id=uuid.uuid1(),
+                        model=self,
+                        entity=entity
+                    )
+                )
+    
     def step(self):
         self.schedule.step()
         if self.schedule.steps >= 1000:
             self.running = False
 
-class Villager(mesa.Agent):
-    def __init__(self, x, y, speed, unique_id: int, model: Village, distance_attack=40, p_attack=0.6):
+
+class Person(mesa.Agent):
+    def __init__(self, x, y, speed, unique_id: int, model: Village, entity: str):
         super().__init__(unique_id, model)
         self.pos = (x, y)
         self.speed = speed
         self.model = model
-        self.distance_attack = distance_attack
-        self.p_attack = p_attack
+        self.entity = entity
+        self.is_transformed = False
 
     def portrayal_method(self):
-        color = "red"
-        r = 3
-        portrayal = {"Shape": "circle",
-                     "Filled": "true",
-                     "Layer": 1,
-                     "Color": color,
-                     "r": r}
+        color = ENTITIES_COLOR[self.entity]
+        r = ENTITIES_SIZES[self.entity] if self.is_transformed else 3
+        portrayal = {
+            "Shape": "circle",
+            "Filled": "true",
+            "Layer": 1,
+            "Color": color,
+            "r": r
+        }
         return portrayal
+    
+    def find_neighbors(self, min_distance, entities="all"):
+        neighbors = []
+        agents = self.model.schedule.agent_buffer()
+        
+        def distance(pos1, pos2, measure='euclidian', norm=2):
+            if measure == 'euclidian':
+                dist = 0
+                for a, b in zip(pos1, pos2):
+                    dist += (a - b) ** norm
+                return dist ** (1 / norm)
+            else:
+                raise Exception(f"measure {measure} not implemented!")
+        
+        for agent in agents:
+            if agent.unique_id != self.unique_id:
+                dist = distance(agent.pos, self.pos)
+                if dist <= min_distance:
+                    if agent.entity in entities or entities == "all":
+                        neighbors.append(agent)
+        
+        return neighbors
 
     def step(self):
         self.pos = wander(self.pos[0], self.pos[1], self.speed, self.model)
 
+
+class Villager(Person):
+    def __init__(self, x, y, speed, unique_id: int, model: Village, entity: str, distance_attack=40, p_attack=0.6, attack_entities=["villager"]):
+        super().__init__(x, y, speed, unique_id, model, entity)
+        self.distance_attack = distance_attack
+        self.p_attack = p_attack
+        self.attack_entities = attack_entities
+        self.is_transformed = False
+
+    def attack(self):
+        if np.random.uniform(0, 1) < self.p_attack:
+            within_range = self.find_neighbors(
+                min_distance=self.distance_attack,
+                entities=self.attack_entities
+            )
+            if len(within_range) > 0:
+                target = random.choice(within_range)
+                
+                self.model.schedule._agents[target.unique_id].entity = "lycanthrope"
+
+    def step(self):
+        self.pos = wander(self.pos[0], self.pos[1], self.speed, self.model)
+        if self.entity == "lycanthrope":
+            if not self.is_transformed and np.random.uniform(0, 1) < 0.1:
+                self.is_transformed = True
+            if self.is_transformed:
+                self.attack()
+
+class Cleric(Person):
+    def __init__(self, x, y, speed, unique_id: int, model: Village, entity: str, healing_range=30):
+        super().__init__(x, y, speed, unique_id, model, entity)
+        self.healing_range = healing_range
+    
+    def heal(self):
+        within_range = self.find_neighbors(min_distance=self.healing_range, entities="lycanthrope")
+        for agent in within_range:
+            self.model.schedule._agents[agent.unique_id].entity = "villager"
+            self.model.schedule._agents[agent.unique_id].is_transformed = False
+
+    def step(self):
+        self.pos = wander(self.pos[0], self.pos[1], self.speed, self.model)
+        self.heal()
+
 if  __name__  ==  "__main__":
-    server  =  ModularServer(Village, [ContinuousCanvas()],"Village",{"n_villagers":  20})
+    server  =  ModularServer(
+        Village,
+        [ContinuousCanvas()],
+        "Village",
+        {
+            "n_villagers":  20,
+            "n_lycanthropes": 5,
+            "n_cleric": 30
+        }
+    )
     server.port = 8521
     server.launch()

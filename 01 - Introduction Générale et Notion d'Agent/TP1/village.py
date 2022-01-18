@@ -11,7 +11,7 @@ from mesa import space
 from mesa.batchrunner import BatchRunner
 from mesa.datacollection import DataCollector
 from mesa.time import RandomActivation
-from mesa.visualization.ModularVisualization import ModularServer, VisualizationElement
+from mesa.visualization.ModularVisualization import ModularServer, VisualizationElement, UserSettableParameter
 from mesa.visualization.modules import ChartModule
 
 ENTITIES_COLOR = {
@@ -27,13 +27,14 @@ ENTITIES_SIZES = {
     "hunter": 3
 }
 
+CANVAS_HEIGHT = 500
+CANVAS_WIDTH = 500
 class ContinuousCanvas(VisualizationElement):
     local_includes = [
         "./js/simple_continuous_canvas.js",
     ]
 
-    def __init__(self, canvas_height=500,
-                 canvas_width=500, instantiate=True):
+    def __init__(self, canvas_height=CANVAS_HEIGHT, canvas_width=CANVAS_WIDTH, instantiate=True):
         self.canvas_height = canvas_height
         self.canvas_width = canvas_width
         self.identifier = "space-canvas"
@@ -67,7 +68,7 @@ def wander(x, y, speed, model):
 class  Village(mesa.Model):
     def  __init__(self,  n_villagers, n_lycanthropes, n_clerics, n_hunters):
         mesa.Model.__init__(self)
-        self.space = mesa.space.ContinuousSpace(600, 600, False)
+        self.space = mesa.space.ContinuousSpace(CANVAS_HEIGHT, CANVAS_WIDTH, False)
         self.schedule = RandomActivation(self)
         self.datacollector = DataCollector(
             model_reporters = {
@@ -270,16 +271,36 @@ class Hunter(Person):
         self.pos = wander(self.pos[0], self.pos[1], self.speed, self.model)
         self.hunt()
 
+chart = ChartModule(
+    canvas_height=200,
+    canvas_width=CANVAS_WIDTH,
+    series = [
+        {
+            "Label": "Population",
+            "Color": "yellow"
+        },
+        {
+            "Label": "Humans",
+            "Color": "blue"
+        },
+        {
+            "Label": "Lycanthropes",
+            "Color": "red"
+        }
+    ],
+    data_collector_name='datacollector'
+)
+
 if  __name__  ==  "__main__":
     server  =  ModularServer(
         Village,
-        [ContinuousCanvas()],
-        "Village",
-        {
-            "n_villagers":  15,
-            "n_lycanthropes": 5,
-            "n_clerics": 3,
-            "n_hunters": 2
+        [chart, ContinuousCanvas()],
+        name="Village",
+        model_params={
+            "n_villagers":  UserSettableParameter(param_type='number', name="Villagers", value=20, min_value=0, max_value=100),
+            "n_lycanthropes": UserSettableParameter(param_type='number', name="Lycanthropes", value=5, min_value=0, max_value=100),
+            "n_clerics": UserSettableParameter(param_type='number', name="Clerics", value=1, min_value=0, max_value=100),
+            "n_hunters": UserSettableParameter(param_type='number', name="Hunters", value=2, min_value=0, max_value=100)
         }
     )
     server.port = 8521

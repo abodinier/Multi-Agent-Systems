@@ -17,12 +17,14 @@ from mesa.visualization.modules import ChartModule
 ENTITIES_COLOR = {
     "villager": "blue",
     "lycanthrope": "red",
-    "cleric": "green"
+    "cleric": "green",
+    "hunter": "black"
 }
 ENTITIES_SIZES = {
     "villager": 3,
     "lycanthrope": 6,
-    "cleric": 3
+    "cleric": 3,
+    "hunter": 3
 }
 
 class ContinuousCanvas(VisualizationElement):
@@ -63,12 +65,12 @@ def wander(x, y, speed, model):
     return new_x, new_y
 
 class  Village(mesa.Model):
-    def  __init__(self,  n_villagers, n_lycanthropes, n_cleric):
+    def  __init__(self,  n_villagers, n_lycanthropes, n_clerics, n_hunters):
         mesa.Model.__init__(self)
         self.space = mesa.space.ContinuousSpace(600, 600, False)
         self.schedule = RandomActivation(self)
         
-        n_tot = n_villagers + n_lycanthropes + n_cleric
+        n_tot = n_villagers + n_lycanthropes + n_clerics + n_hunters
         list_tot = [i for i in range(n_tot)]
         
         lycanthropes_indices = sorted(
@@ -81,7 +83,14 @@ class  Village(mesa.Model):
         cleric_indices = sorted(
             np.random.choice(
                 list(set(list_tot) - set(lycanthropes_indices)),
-                size=n_cleric,
+                size=n_clerics,
+                replace=False)
+        )
+        
+        hunter_indices = sorted(
+            np.random.choice(
+                list(set(list_tot) - set(lycanthropes_indices) - set(cleric_indices)),
+                size=n_hunters,
                 replace=False)
         )
         
@@ -89,6 +98,7 @@ class  Village(mesa.Model):
             
             is_cleric = i in cleric_indices
             is_lycanthrope = i in lycanthropes_indices
+            is_hunter = i in hunter_indices
             
             if is_cleric:
                 entity = "cleric"
@@ -106,6 +116,18 @@ class  Village(mesa.Model):
                 entity = "lycanthrope"
                 self.schedule.add(
                     Villager(
+                        x=random.random()  *  600,
+                        y=random.random()  *  600,
+                        speed=10,
+                        unique_id=uuid.uuid1(),
+                        model=self,
+                        entity=entity
+                    )
+                )
+            if is_hunter:
+                entity = "hunter"
+                self.schedule.add(
+                    Hunter(
                         x=random.random()  *  600,
                         y=random.random()  *  600,
                         speed=10,
@@ -222,15 +244,31 @@ class Cleric(Person):
         self.pos = wander(self.pos[0], self.pos[1], self.speed, self.model)
         self.heal()
 
+class Hunter(Person):
+    def __init__(self, x, y, speed, unique_id: int, model: Village, entity: str, attack_range=40):
+        super().__init__(x, y, speed, unique_id, model, entity)
+        self.attack_range = attack_range
+    
+    def hunt(self):
+        within_range = self.find_neighbors(min_distance=self.attack_range, entities="lycanthrope")
+        for agent in within_range:
+            if self.model.schedule._agents[agent.unique_id].is_transformed:
+                del self.model.schedule._agents[agent.unique_id]
+    
+    def step(self):
+        self.pos = wander(self.pos[0], self.pos[1], self.speed, self.model)
+        self.hunt()
+
 if  __name__  ==  "__main__":
     server  =  ModularServer(
         Village,
         [ContinuousCanvas()],
         "Village",
         {
-            "n_villagers":  20,
+            "n_villagers":  15,
             "n_lycanthropes": 5,
-            "n_cleric": 30
+            "n_clerics": 3,
+            "n_hunters": 2
         }
     )
     server.port = 8521

@@ -192,6 +192,7 @@ class Person(mesa.Agent):
         for agent in agents:
             if agent.unique_id != self.unique_id:
                 dist = distance(agent.pos, self.pos)
+                dist = dist - ENTITIES_SIZES[agent.entity] / 2 - ENTITIES_SIZES[self.entity] / 2
                 if dist <= min_distance:
                     if agent.entity in entities or entities == "all":
                         neighbors.append(agent)

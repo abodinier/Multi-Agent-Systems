@@ -291,7 +291,7 @@ chart = ChartModule(
     data_collector_name='datacollector'
 )
 
-if  __name__  ==  "__main__":
+def run_single_server():
     server  =  ModularServer(
         Village,
         [chart, ContinuousCanvas()],
@@ -305,3 +305,28 @@ if  __name__  ==  "__main__":
     )
     server.port = 8521
     server.launch()
+
+def run_batch():
+    batchrunner = BatchRunner(
+        model_cls = Village,
+        variable_parameters = {
+            "n_villagers":  [50],
+            "n_lycanthropes": [5],
+            "n_clerics": [i for i in range(11)],
+            "n_hunters": [1]
+        },
+        model_reporters = {
+                "Population":lambda m: len([a for a in m.schedule.agents]),
+                "Humans": lambda m: len([a for a in m.schedule.agents if a.entity != "lycanthrope"]),
+                "Lycanthropes": lambda m: len([a for a in m.schedule.agents if a.entity == "lycanthrope"]),
+                "Clerics": lambda m: len([a for a in m.schedule.agents if a.entity == "cleric"]),
+                "Hunters": lambda m: len([a for a in m.schedule.agents if a.entity == "hunter"])
+            }
+    )
+    batchrunner.run_all()
+    df = batchrunner.get_model_vars_dataframe()
+    return df
+
+if  __name__  ==  "__main__":
+    df = run_batch()
+    df.to_csv("./df.csv")

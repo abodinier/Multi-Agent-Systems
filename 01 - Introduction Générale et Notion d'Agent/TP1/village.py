@@ -8,7 +8,7 @@ import mesa
 import numpy
 import pandas
 from mesa import space
-from mesa.batchrunner import BatchRunner
+from mesa.batchrunner import BatchRunner, BatchRunnerMP
 from mesa.datacollection import DataCollector
 from mesa.time import RandomActivation
 from mesa.visualization.ModularVisualization import ModularServer, VisualizationElement, UserSettableParameter
@@ -321,7 +321,29 @@ def run_batch():
                 "Lycanthropes": lambda m: len([a for a in m.schedule.agents if a.entity == "lycanthrope"]),
                 "Clerics": lambda m: len([a for a in m.schedule.agents if a.entity == "cleric"]),
                 "Hunters": lambda m: len([a for a in m.schedule.agents if a.entity == "hunter"])
-            }
+        }
+    )
+    batchrunner.run_all()
+    df = batchrunner.get_model_vars_dataframe()
+    return df
+
+def run_batch_mp():
+    batchrunner = BatchRunnerMP(
+        model_cls = Village,
+        variable_parameters = {
+            "n_villagers":  [50],
+            "n_lycanthropes": [5],
+            "n_clerics": [i for i in range(11)],
+            "n_hunters": [1]
+        },
+        model_reporters = {
+                "Population":lambda m: len([a for a in m.schedule.agents]),
+                "Humans": lambda m: len([a for a in m.schedule.agents if a.entity != "lycanthrope"]),
+                "Lycanthropes": lambda m: len([a for a in m.schedule.agents if a.entity == "lycanthrope"]),
+                "Clerics": lambda m: len([a for a in m.schedule.agents if a.entity == "cleric"]),
+                "Hunters": lambda m: len([a for a in m.schedule.agents if a.entity == "hunter"])
+        },
+        nr_processes=None
     )
     batchrunner.run_all()
     df = batchrunner.get_model_vars_dataframe()

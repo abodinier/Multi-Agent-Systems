@@ -69,6 +69,15 @@ class  Village(mesa.Model):
         mesa.Model.__init__(self)
         self.space = mesa.space.ContinuousSpace(600, 600, False)
         self.schedule = RandomActivation(self)
+        self.datacollector = DataCollector(
+            model_reporters = {
+                "Population":lambda m: len([a for a in m.schedule.agents]),
+                "Humans": lambda m: len([a for a in m.schedule.agents if a.entity != "lycanthrope"]),
+                "Lycanthropes": lambda m: len([a for a in m.schedule.agents if a.entity == "lycanthrope"]),
+                "Clerics": lambda m: len([a for a in m.schedule.agents if a.entity == "cleric"]),
+                "Hunters": lambda m: len([a for a in m.schedule.agents if a.entity == "hunter"])
+            }
+        )
         
         n_tot = n_villagers + n_lycanthropes + n_clerics + n_hunters
         list_tot = [i for i in range(n_tot)]
@@ -151,6 +160,7 @@ class  Village(mesa.Model):
     
     def step(self):
         self.schedule.step()
+        self.datacollector.collect(self)
         if self.schedule.steps >= 1000:
             self.running = False
 

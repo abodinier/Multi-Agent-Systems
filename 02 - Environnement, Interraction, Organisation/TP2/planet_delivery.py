@@ -1,4 +1,4 @@
-import json  # Pour la sérialisation/désérialisation des objects
+import json
 import math
 import random
 import string
@@ -9,7 +9,7 @@ import mesa
 import mesa.space
 import numpy as np
 import spade  # Framework multi-agents de messages
-import networkx as nx  # Pour le parcours du réseau de planètes
+import networkx as nx  # Pour le parcours du reseau de planetes
 from mesa import Agent, Model
 from threading import Lock  # Pour le mutual exclusion
 
@@ -20,7 +20,7 @@ from mesa.visualization.ModularVisualization import VisualizationElement, Modula
 from mesa.visualization.modules import ChartModule
 from spade.behaviour import PeriodicBehaviour, OneShotBehaviour
 from spade.template import Template
-import uuid  # Génération de Unique ID
+import uuid  # Generation de Unique ID
 
 NEW_ITEM_PROBA = 0.05
 PROBA_ISSUE_ROAD = 0.05
@@ -30,7 +30,7 @@ WAITING_TIME = 3
 
 class Item:
     @staticmethod
-    def from_json(json_object):  #Désérialisation des items pour le passage par message
+    def from_json(json_object):  #Deserialisation des items pour le passage par message
         return Item(json_object['x'], json_object['y'], json_object['a'], json_object['b'], json_object['c'],
                     json_object['uid'])
 
@@ -73,7 +73,7 @@ class Item:
 
 
 class SpaceRoadNetwork(Agent):
-    def __init__(self, planets: List, unique_id: int, model: Model):
+    def __init__(self, planets, unique_id, model):
         super().__init__(unique_id, model)
         self.initial_graph = nx.Graph()
         self.current_graph = nx.Graph()

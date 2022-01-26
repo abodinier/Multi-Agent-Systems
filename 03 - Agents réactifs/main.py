@@ -167,7 +167,7 @@ class Marker:  # La classe pour les balises
 
 
 class Robot(Agent):  # La classe des agents
-    def __init__(self, unique_id, model, x, y, speed, sight_distance, angle=0.0):
+    def __init__(self, unique_id, model, x, y, speed, sight_distance, angle=0.0, proba_chgt_angle=.1):
         super().__init__(unique_id, model)
         self.x = x
         self.y = y

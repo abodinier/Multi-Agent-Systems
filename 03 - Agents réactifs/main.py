@@ -175,9 +175,64 @@ class Robot(Agent):  # La classe des agents
         self.sight_distance = sight_distance
         self.angle = angle
         self.counter = 0
+        self.proba_chgt_angle = proba_chgt_angle
+    
+    def get_distance(self, o2):
+        """Return the distance between agent and object 2
+
+        Args:
+            o1 (agent): Agent
+            o2 (Object): Object that must have two attributes : x and y
+        """
+        return ( (self.x - o2.x)**2 + (self.y - o2.y)**2 ) ** .5
+    
+    def is_in_quicksand(self):
+        for quicksand in self.model.quicksands:
+            if self.get_distance(quicksand) <= quicksand.r:
+                return True
+        return False
+
+    def compute_trajectory(self, speed):
+        new_x = max(min(self.x + math.cos(self.angle) * speed, self.model.space.x_max), self.model.space.x_min)
+        new_y = max(min(self.y + math.sin(self.angle) * speed, self.model.space.y_max), self.model.space.y_min)
+        
+        return new_x, new_y
+    
+    def random_change_angle(self):
+        if self.proba_chgt_angle < np.random.uniform(0, 1):
+            new_angle = np.random.uniform(0, 2*np.pi)
+            
+            self.angle = new_angle
+    
+    def check_collision(self):
+        for agent in self.model.schedule.agents:
+            if agent.unique_id != self.unique_id:
+                if self.get_distance(agent) < self.sight_distance:
+                    new_pos = self.compute_trajectory(self.speed)
+                    AV = np.array([agent.x - self.x, agent.y - self.y])
+                    
+                    u = np.array([new_pos[0] - self.x, new_pos[1] - self.y])  # vecteur directeur
+                    u /= (u @ u.T) ** .5  # normalize
+                    AH = AV @ u
+
+                    HV = (AV @ AV - AH ** 2) ** .5
+                    
+                    if HV < agent.speed:
+                        return True
+                    
+                    return False
+    
+    def wander(self, speed):
+        new_x, new_y = self.compute_trajectory(speed)  # Move
+        self.x = new_x
+        self.y = new_y
 
     def step(self):
-        pass  # TODO L'integralite du code du TP peut etre ajoutee ici.
+        self.random_change_angle()  # random angle change
+        speed = self.speed / 2 if self.is_in_quicksand() else self.speed  # Speed is /2 if in quicksand
+        while(self.check_collision()):
+            self.angle = np.random.uniform(0, 2*np.pi)
+        self.wander(speed)
 
     def portrayal_method(self):
         portrayal = {"Shape": "arrowHead", "s": 1, "Filled": "true", "Color": "Red", "Layer": 3, 'x': self.x,

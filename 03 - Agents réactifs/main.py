@@ -251,8 +251,8 @@ class Robot(Agent):  # La classe des agents
                     return True
         return False
 
-    def check_collision(self, speed):
-        new_pos = self.compute_trajectory(speed)
+    def check_collision(self):
+        new_pos = self.compute_trajectory()
         return self.check_collision_agent(*new_pos) or self.check_collision_obstacles(*new_pos)
     
     def look_for_mines(self):

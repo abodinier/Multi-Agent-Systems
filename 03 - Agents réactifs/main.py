@@ -184,6 +184,8 @@ class Robot(Agent):  # La classe des agents
             o2 (Object): Object that must have two attributes : x and y
             o1 (Tuple): (x, y) when we want to compute the distance between o2 and o1 which is not the agent's position
         """
+        if o1:
+            return ( (o1[0] - o2.x)**2 + (o1[1] - o2.y)**2 ) ** .5
         return ( (self.x - o2.x)**2 + (self.y - o2.y)**2 ) ** .5
     
     def is_in_quicksand(self):
@@ -200,9 +202,7 @@ class Robot(Agent):  # La classe des agents
     
     def random_change_angle(self):
         if self.proba_chgt_angle < np.random.uniform(0, 1):
-            new_angle = np.random.uniform(0, 2*np.pi)
-            
-            self.angle = new_angle
+            self.angle = np.random.uniform(0, 2*np.pi)
     
     def check_collision(self):
         for agent in self.model.schedule.agents:

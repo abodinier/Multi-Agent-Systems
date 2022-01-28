@@ -222,6 +222,13 @@ class Robot(Agent):  # La classe des agents
                     
                     return False
     
+    def check_collision_obstacles(self, new_x, new_y):
+        for obstacle in self.model.obstacles:
+            if self.get_distance_from(obstacle) < self.sight_distance:
+                dist = self.get_distance_from(obstacle, (new_x, new_y))
+                if dist <= obstacle.r:
+                    return True
+        return False
     def wander(self, speed):
         new_x, new_y = self.compute_trajectory(speed)  # Move
         self.x = new_x

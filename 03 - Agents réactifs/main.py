@@ -244,7 +244,19 @@ class Robot(Agent):  # La classe des agents
             if self.get_distance_from(mine) < self.sight_distance:
                 return mine
         return None
-        
+    
+    def go_to_mine(self, speed, mine):
+        dist = self.get_distance_from(mine)
+        theta = math.asin( (mine.y - self.y) / dist )
+        catch = False
+        if dist <= speed:
+            speed = dist
+            catch = True
+        return theta, speed, catch
+    
+    def destroy_mine(self, mine):
+        self.model.mines.remove(mine)
+    
     def wander(self, speed):
         new_x, new_y = self.compute_trajectory(speed)  # Move
         self.x = new_x

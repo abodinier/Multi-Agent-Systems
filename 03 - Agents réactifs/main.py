@@ -202,9 +202,9 @@ class Robot(Agent):  # La classe des agents
                 return True
         return False
 
-    def compute_trajectory(self, speed):
-        new_x = max(min(self.x + math.cos(self.angle) * speed, self.model.space.x_max), self.model.space.x_min)
-        new_y = max(min(self.y + math.sin(self.angle) * speed, self.model.space.y_max), self.model.space.y_min)
+    def compute_trajectory(self):
+        new_x = max(min(self.x + math.cos(self.angle) * self.speed, self.model.space.x_max), self.model.space.x_min)
+        new_y = max(min(self.y + math.sin(self.angle) * self.speed, self.model.space.y_max), self.model.space.y_min)
         
         return new_x, new_y
     

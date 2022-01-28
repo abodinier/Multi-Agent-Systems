@@ -208,10 +208,6 @@ class Robot(Agent):  # La classe des agents
         
         return new_x, new_y
     
-    def random_change_angle(self):
-        if self.proba_chgt_angle < np.random.uniform(0, 1):
-            self.angle = np.random.uniform(0, 2*np.pi)
-    
     def check_collision_agent(self, new_x, new_y):
         for agent in self.model.schedule.agents:
             if agent.unique_id != self.unique_id:

@@ -17,6 +17,7 @@ from mesa.visualization.modules import ChartModule
 
 MAX_ITERATION = 100
 PROBA_CHGT_ANGLE = 0.01
+EPS = 1e-5
 
 
 def move(x, y, speed, angle):

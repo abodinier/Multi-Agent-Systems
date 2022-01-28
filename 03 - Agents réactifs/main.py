@@ -188,7 +188,7 @@ class Robot(Agent):  # La classe des agents
     
     def is_in_quicksand(self):
         for quicksand in self.model.quicksands:
-            if self.get_distance(quicksand) <= quicksand.r:
+            if self.get_distance_from(quicksand) <= quicksand.r:
                 return True
         return False
 

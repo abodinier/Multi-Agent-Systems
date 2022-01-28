@@ -255,31 +255,83 @@ class Robot(Agent):  # La classe des agents
         new_pos = self.compute_trajectory()
         return self.check_collision_agent(*new_pos) or self.check_collision_obstacles(*new_pos)
     
-    def look_for_mines(self):
-        """Return the first mine found (distance < sight_distance)
+    def get_markers(self):
+        dangers, indications = [], []
+        
+        for marker in self.model.markers:
+            
+            dist = self.get_distance_from(marker)
+            
+            if dist < self.sight_distance:
+                
+                if marker.purpose == MarkerPurpose.DANGER:
+                    dangers.append(
+                        (marker, dist)
+                    )
+                
+                if marker.purpose == MarkerPurpose.INDICATION:
+                    indications.append(
+                        (marker, dist)
+                    )
+                
+        return dangers, indications
+    
+    def check_markers(self):
+        dangers, indications = self.get_markers()
+        
+        if dangers and self.ignore_steps_count == 0:
+            danger = min(dangers, key=lambda x: x[1])[0]
+            
+            self.in_danger = True
+            
+            (self.x, self.y), self.angle = go_to(
+                self.x, self.y, self.speed, danger.x, danger.y
+            )
+            
+            if self.get_distance_from(danger) < EPS:
+                self.model.markers.remove(danger)
+                self.angle = - self.angle
+                self.in_danger = False
 
-        Returns:
-            Mine or None: The first mine found or None if no mine found
-        """
+        if indications and self.ignore_steps_count == 0:
+            indication = min(indications, key=lambda x: x[1])[0]
+            
+            self.following_indication = True
+            
+            (self.x, self.y), self.angle = go_to(
+                self.x, self.y, self.speed, indication.x, indication.y
+            )
+            
+            if self.get_distance_from(indication) < EPS:
+                self.model.markers.remove(indication)
+                self.angle = (self.angle + math.pi) % (2*math.pi)
+                self.following_indication = False
+    
+    def demining(self):
+        mines = []
         for mine in self.model.mines:
-            if self.get_distance_from(mine) < self.sight_distance:
-                return mine
-        return None
-    
-    def go_to_mine(self, speed, mine):
-        dist = self.get_distance_from(mine)
-        theta = math.asin( (mine.y - self.y) / dist )
-        catch = False
-        if dist <= speed:
-            speed = dist
-            catch = True
-        return theta, speed, catch
-    
-    def destroy_mine(self, mine):
-        self.model.mines.remove(mine)
-    
-    def wander(self, speed):
-        new_x, new_y = self.compute_trajectory(speed)  # Move
+            dist = self.get_distance_from(mine)
+            if dist < self.sight_distance:
+                mines.append(
+                    (mine, dist)
+                )
+        
+        if mines:
+            mine, dist = min(mines, key=lambda x: x[1])
+        
+            self.deminage = True
+            
+            (self.x, self.y), self.angle = go_to(
+                    self.x, self.y, self.speed, mine.x, mine.y
+                )
+            
+            if self.get_distance_from(mine) < EPS:
+                self.model.mines.remove(mine)
+                self.mark_indication(direction=self.angle)
+                self.deminage = False
+
+    def wander(self):
+        new_x, new_y = self.compute_trajectory()  # Move
         self.x = new_x
         self.y = new_y
 

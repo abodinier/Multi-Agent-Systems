@@ -229,6 +229,11 @@ class Robot(Agent):  # La classe des agents
                 if dist <= obstacle.r:
                     return True
         return False
+
+    def check_collision(self, speed):
+        new_pos = self.compute_trajectory(speed)
+        return self.check_collision_agent(*new_pos) or self.check_collision_obstacles(*new_pos)
+    
     def wander(self, speed):
         new_x, new_y = self.compute_trajectory(speed)  # Move
         self.x = new_x
@@ -237,7 +242,7 @@ class Robot(Agent):  # La classe des agents
     def step(self):
         self.random_change_angle()  # random angle change
         speed = self.speed / 2 if self.is_in_quicksand() else self.speed  # Speed is /2 if in quicksand
-        while(self.check_collision()):
+        while self.check_collision(speed):
             self.angle = np.random.uniform(0, 2*np.pi)
         self.wander(speed)
 

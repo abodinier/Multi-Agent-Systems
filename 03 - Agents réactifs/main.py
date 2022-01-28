@@ -263,10 +263,23 @@ class Robot(Agent):  # La classe des agents
         self.y = new_y
 
     def step(self):
-        self.random_change_angle()  # random angle change
         speed = self.speed / 2 if self.is_in_quicksand() else self.speed  # Speed is /2 if in quicksand
-        while self.check_collision(speed):
-            self.angle = np.random.uniform(0, 2*np.pi)
+        mine = self.look_for_mines()
+        if mine:
+            theta, speed, catch = self.go_to_mine(speed, mine)
+            self.angle = theta
+            if catch:
+                self.wander(speed)  # reach mine
+                self.destroy_mine(mine)  # destroy mine
+            else:
+                if self.check_collision_agent(*self.compute_trajectory(speed)):
+                    self.wander(speed=0)  # wait for the agent to move
+                while(self.check_collision_obstacles(*self.compute_trajectory(speed))):  # must change trajectory
+                    self.angle = np.random.uniform(0, 2*np.pi)
+        else:
+            self.random_change_angle()  # random angle change
+            while self.check_collision(speed):
+                self.angle = np.random.uniform(0, 2*np.pi)
         self.wander(speed)
 
     def portrayal_method(self):

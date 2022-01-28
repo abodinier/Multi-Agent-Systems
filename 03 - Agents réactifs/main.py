@@ -177,12 +177,12 @@ class Robot(Agent):  # La classe des agents
         self.counter = 0
         self.proba_chgt_angle = proba_chgt_angle
     
-    def get_distance(self, o2):
+    def get_distance_from(self, o2, o1=None):
         """Return the distance between agent and object 2
 
         Args:
-            o1 (agent): Agent
             o2 (Object): Object that must have two attributes : x and y
+            o1 (Tuple): (x, y) when we want to compute the distance between o2 and o1 which is not the agent's position
         """
         return ( (self.x - o2.x)**2 + (self.y - o2.y)**2 ) ** .5
     

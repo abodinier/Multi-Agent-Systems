@@ -336,24 +336,37 @@ class Robot(Agent):  # La classe des agents
         self.y = new_y
 
     def step(self):
-        speed = self.speed / 2 if self.is_in_quicksand() else self.speed  # Speed is /2 if in quicksand
-        mine = self.look_for_mines()
-        if mine:
-            theta, speed, catch = self.go_to_mine(speed, mine)
-            self.angle = theta
-            if catch:
-                self.wander(speed)  # reach mine
-                self.destroy_mine(mine)  # destroy mine
-            else:
-                if self.check_collision_agent(*self.compute_trajectory(speed)):
-                    self.wander(speed=0)  # wait for the agent to move
-                while(self.check_collision_obstacles(*self.compute_trajectory(speed))):  # must change trajectory
-                    self.angle = np.random.uniform(0, 2*np.pi)
+        # TODO debug the collisions
+        # Check Quicksands:
+        self.check_quicksands()
+        
+        # Check collisions (obstacles and agents):
+        while self.check_collision():
+            self.angle = np.random.uniform(0, 2*np.pi)
+            self.avoiding_collision = True
+        
+        if self.avoiding_collision:
+            self.wander()
+            self.avoiding_collision = False
+        
         else:
-            self.random_change_angle()  # random angle change
-            while self.check_collision(speed):
-                self.angle = np.random.uniform(0, 2*np.pi)
-        self.wander(speed)
+            self.demining()
+        
+            if not self.deminage:
+                
+                self.check_markers()
+
+                if ~self.in_danger and ~self.following_indication:
+                    if self.proba_chgt_angle <= np.random.uniform(0, 1):
+                        self.angle = np.random.uniform(0, 2*np.pi)
+                    self.wander()
+        """if self.proba_chgt_angle < np.random.uniform(0, 1) :
+            self.angle = np.random.uniform(0, 2*np.pi)
+        while(self.check_collision()):
+            self.angle = np.random.uniform(0, 2*np.pi)
+        self.wander()"""
+
+
 
     def portrayal_method(self):
         portrayal = {"Shape": "arrowHead", "s": 1, "Filled": "true", "Color": "Red", "Layer": 3, 'x': self.x,

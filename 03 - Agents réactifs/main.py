@@ -176,6 +176,14 @@ class Robot(Agent):  # La classe des agents
         self.angle = angle
         self.counter = 0
         self.proba_chgt_angle = proba_chgt_angle
+        
+        self.max_speed = speed
+        self.is_in_quicksand = False
+        self.deminage = False
+        self.avoiding_collision = False
+        self.in_danger = False
+        self.following_indication = False
+        self.ignore_steps_count = 0
     
     def get_distance_from(self, o2, o1=None):
         """Return the distance between agent and object 2

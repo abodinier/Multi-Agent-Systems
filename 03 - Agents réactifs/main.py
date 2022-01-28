@@ -196,11 +196,28 @@ class Robot(Agent):  # La classe des agents
             return ( (o1[0] - o2.x)**2 + (o1[1] - o2.y)**2 ) ** .5
         return ( (self.x - o2.x)**2 + (self.y - o2.y)**2 ) ** .5
     
-    def is_in_quicksand(self):
+    def mark_danger(self):
+        marker = Marker(self.x, self.y, MarkerPurpose.DANGER)
+        self.model.markers.append(marker)
+    
+    def mark_indication(self, direction):
+        marker = Marker(self.x, self.y, MarkerPurpose.INDICATION, direction=direction)
+        self.model.markers.append(marker)
+    
+    def check_quicksands(self):
+        old_is_in_quicksand = self.is_in_quicksand
+        
         for quicksand in self.model.quicksands:
             if self.get_distance_from(quicksand) <= quicksand.r:
-                return True
-        return False
+                self.speed = self.max_speed / 2
+                self.is_in_quicksand = True
+                return None
+        
+        if old_is_in_quicksand == True and self.is_in_quicksand == False:
+            self.mark_danger()
+        
+        self.is_in_quicksand = False
+        self.speed = self.max_speed
 
     def compute_trajectory(self):
         new_x = max(min(self.x + math.cos(self.angle) * self.speed, self.model.space.x_max), self.model.space.x_min)

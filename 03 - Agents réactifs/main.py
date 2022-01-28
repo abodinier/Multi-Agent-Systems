@@ -204,20 +204,20 @@ class Robot(Agent):  # La classe des agents
         if self.proba_chgt_angle < np.random.uniform(0, 1):
             self.angle = np.random.uniform(0, 2*np.pi)
     
-    def check_collision(self):
+    def check_collision_agent(self, new_x, new_y):
         for agent in self.model.schedule.agents:
             if agent.unique_id != self.unique_id:
-                if self.get_distance(agent) < self.sight_distance:
-                    new_pos = self.compute_trajectory(self.speed)
-                    AV = np.array([agent.x - self.x, agent.y - self.y])
+                if self.get_distance_from(agent) < self.sight_distance:
+                    AV = np.array([agent.x - self.x, agent.y - self.y])  # vecteur agent -> voisin
                     
-                    u = np.array([new_pos[0] - self.x, new_pos[1] - self.y])  # vecteur directeur
-                    u /= (u @ u.T) ** .5  # normalize
-                    AH = AV @ u
+                    u = np.array([new_x - self.x, new_y - self.y])  # agent_ancienne_pos -> agent_nouvelle_pos
+                    u /= (u @ u.T) ** .5  # normalize u
+                    
+                    AH = AV @ u  # orthogonal projection of AV over u
 
-                    HV = (AV @ AV - AH ** 2) ** .5
+                    HV = (AV @ AV - AH ** 2) ** .5  # Pythagore
                     
-                    if HV < agent.speed:
+                    if HV <= agent.speed:
                         return True
                     
                     return False

@@ -234,6 +234,17 @@ class Robot(Agent):  # La classe des agents
         new_pos = self.compute_trajectory(speed)
         return self.check_collision_agent(*new_pos) or self.check_collision_obstacles(*new_pos)
     
+    def look_for_mines(self):
+        """Return the first mine found (distance < sight_distance)
+
+        Returns:
+            Mine or None: The first mine found or None if no mine found
+        """
+        for mine in self.model.mines:
+            if self.get_distance_from(mine) < self.sight_distance:
+                return mine
+        return None
+        
     def wander(self, speed):
         new_x, new_y = self.compute_trajectory(speed)  # Move
         self.x = new_x

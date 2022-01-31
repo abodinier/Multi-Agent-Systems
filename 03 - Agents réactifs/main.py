@@ -178,6 +178,7 @@ class Robot(Agent):  # La classe des agents
         self.counter = 0
         self.proba_chgt_angle = proba_chgt_angle
         
+        # Usefull state variables
         self.max_speed = speed
         self.is_in_quicksand = False
         self.demining_in_progress = False
@@ -198,16 +199,28 @@ class Robot(Agent):  # La classe des agents
         return ( (self.x - o2.x)**2 + (self.y - o2.y)**2 ) ** .5
     
     def mark_danger(self):
+        """Leave a danger marker
+        """
         marker = Marker(self.x, self.y, MarkerPurpose.DANGER)
         self.model.markers.append(marker)
         self.ignore_steps_count = self.speed / 2
     
     def mark_indication(self, direction):
+        """Leave an indication marer
+
+        Args:
+            direction (float): Angle in radians
+        """
         marker = Marker(self.x, self.y, MarkerPurpose.INDICATION, direction=direction)
         self.model.markers.append(marker)
         self.ignore_steps_count = self.speed / 2
     
     def check_quicksands(self):
+        """Checks if the robot is in quicksand and leave a marker if it just leaved a quicksand
+
+        Returns:
+            None: Returns None
+        """
         old_is_in_quicksand = self.is_in_quicksand
         
         for quicksand in self.model.quicksands:
@@ -223,12 +236,26 @@ class Robot(Agent):  # La classe des agents
             self.mark_danger()
 
     def compute_trajectory(self):
+        """Return the new position if the robots move with its current direction and speed, but it does not updates the position
+
+        Returns:
+            tuple: (new_x, new_y)
+        """
         new_x = max(min(self.x + math.cos(self.angle) * self.speed, self.model.space.x_max), self.model.space.x_min)
         new_y = max(min(self.y + math.sin(self.angle) * self.speed, self.model.space.y_max), self.model.space.y_min)
         
         return new_x, new_y
     
     def check_collision_agent(self, new_x, new_y):
+        """Checks if with the potential new position there will be a collision with other agents
+
+        Args:
+            new_x (float): New x 
+            new_y (float): New y
+
+        Returns:
+            bool: If there is at least one collision, returns True, otherwise, False
+        """
         for agent in self.model.schedule.agents:
             if agent.unique_id != self.unique_id:
                 if self.get_distance_from(agent) < self.sight_distance:
@@ -244,6 +271,15 @@ class Robot(Agent):  # La classe des agents
         return False
     
     def check_collision_obstacles(self, new_x, new_y):
+        """Checks if with the potential new position there will be a collision with obstacles
+
+        Args:
+            new_x (float): new x 
+            new_y (float): new y
+
+        Returns:
+            bool: True if collision, otherwise False
+        """
         for obstacle in self.model.obstacles:
             if self.get_distance_from(obstacle) < self.sight_distance:
                 dist = self.get_distance_from(obstacle, (new_x, new_y))
@@ -253,6 +289,15 @@ class Robot(Agent):  # La classe des agents
         return False
     
     def check_collision_borders(self, new_x, new_y):
+        """Checks if with the potential new position there will be a collision with borders
+
+        Args:
+            new_x (float): new x 
+            new_y (float): new y
+
+        Returns:
+            bool: True if collision, otherwise False
+        """
         if self.model.space.x_min <= new_x <= self.model.space.x_max:
             if self.model.space.y_min <= new_y <= self.model.space.y_max:
                 return False
@@ -263,6 +308,11 @@ class Robot(Agent):  # La classe des agents
         return self.check_collision_agent(*new_pos) or self.check_collision_obstacles(*new_pos) or self.check_collision_borders(*new_pos)
     
     def get_markers(self):
+        """Returns the list of all markers at sight with the distance to them
+
+        Returns:
+            tuple: a tuple of list of tuples : (dangers, indications) with danger in the form [(danger_1, 53), ...]
+        """
         dangers, indications = [], []
         
         for marker in self.model.markers:
@@ -284,6 +334,8 @@ class Robot(Agent):  # La classe des agents
         return dangers, indications
     
     def check_markers(self):
+        """Pick marker and update angle accordingly (priority to danger markers)
+        """
         dangers, indications = self.get_markers()
         
         if dangers:
@@ -316,6 +368,8 @@ class Robot(Agent):  # La classe des agents
                 self.x, self.y = self.compute_trajectory()
     
     def demining(self):
+        """The demining set of actions (look for mine, go to mine, destroy and leave marker)
+        """
         mines = []
         for mine in self.model.mines:
             dist = self.get_distance_from(mine)
@@ -346,8 +400,10 @@ class Robot(Agent):  # La classe des agents
             self.angle = np.random.uniform(0, 2*np.pi)
 
     def step(self):
+        # Check the quicksands
         self.check_quicksands()
         
+        # Check collision which is the No 1 danger
         c = 0
         stop = False
         while(self.check_collision()):
@@ -355,12 +411,12 @@ class Robot(Agent):  # La classe des agents
             self.avoiding_collision = True
             c += 1
             if c > 10:
-                stop = True
+                stop = True  # We did not found a way to avoid collision, so we let the other agents go
                 break
         
         if ~stop:
             
-            if self.avoiding_collision:
+            if self.avoiding_collision:  # We are not escaping from a collision, so we can continue
                 self.wander()
                 self.avoiding_collision = False
             

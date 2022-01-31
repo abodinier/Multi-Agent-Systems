@@ -447,7 +447,7 @@ def run_single_server():
                             chart],
                            "Deminer robots",
                            {"n_robots": mesa.visualization.
-                            ModularVisualization.UserSettableParameter('slider', "Number of robots", 7, 3,
+                            ModularVisualization.UserSettableParameter('slider', "Number of robots", 7, 1,
                                                                        15, 1),
                             "n_obstacles": mesa.visualization.
                             ModularVisualization.UserSettableParameter('slider', "Number of obstacles", 5, 2, 10, 1),

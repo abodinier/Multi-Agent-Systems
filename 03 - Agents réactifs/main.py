@@ -180,7 +180,7 @@ class Robot(Agent):  # La classe des agents
         
         self.max_speed = speed
         self.is_in_quicksand = False
-        self.deminage = False
+        self.demining_in_progress = False
         self.avoiding_collision = False
         self.in_danger = False
         self.following_indication = False
@@ -320,7 +320,7 @@ class Robot(Agent):  # La classe des agents
         if mines:
             mine, dist = min(mines, key=lambda x: x[1])
         
-            self.deminage = True
+            self.demining_in_progress = True
             
             (self.x, self.y), self.angle = go_to(
                     self.x, self.y, self.speed, mine.x, mine.y
@@ -329,7 +329,7 @@ class Robot(Agent):  # La classe des agents
             if self.get_distance_from(mine) < EPS:
                 self.model.mines.remove(mine)
                 self.mark_indication(direction=self.angle)
-                self.deminage = False
+                self.demining_in_progress = False
 
     def wander(self):
         new_x, new_y = self.compute_trajectory()  # Move
@@ -357,15 +357,17 @@ class Robot(Agent):  # La classe des agents
                 
                 self.check_markers()
 
-                if ~self.in_danger and ~self.following_indication:
-                    if self.proba_chgt_angle <= np.random.uniform(0, 1):
-                        self.angle = np.random.uniform(0, 2*np.pi)
-                    self.wander()
-        """if self.proba_chgt_angle < np.random.uniform(0, 1) :
-            self.angle = np.random.uniform(0, 2*np.pi)
-        while(self.check_collision()):
-            self.angle = np.random.uniform(0, 2*np.pi)
-        self.wander()"""
+                if not self.demining_in_progress:
+                    
+                    if self.ignore_steps_count == 0:
+                        self.check_markers()
+
+                    if ~self.in_danger and ~self.following_indication:
+                        
+                        self.wander()
+        
+        self.speed = self.max_speed
+        self.ignore_steps_count = max(0, self.ignore_steps_count - 1)
 
 
 

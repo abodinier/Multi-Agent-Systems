@@ -233,18 +233,15 @@ class Robot(Agent):  # La classe des agents
             if agent.unique_id != self.unique_id:
                 if self.get_distance_from(agent) < self.sight_distance:
                     AV = np.array([agent.x - self.x, agent.y - self.y])  # vecteur agent -> voisin
-                    
                     u = np.array([new_x - self.x, new_y - self.y])  # agent_ancienne_pos -> agent_nouvelle_pos
-                    u /= (u @ u.T) ** .5  # normalize u
-                    
+                    u = u / (u @ u.T + EPS) ** .5  # normalize u
                     AH = AV @ u  # orthogonal projection of AV over u
 
                     HV = (AV @ AV - AH ** 2) ** .5  # Pythagore
-                    
                     if HV <= agent.speed:
                         return True
-                    
-                    return False
+
+        return False
     
     def check_collision_obstacles(self, new_x, new_y):
         for obstacle in self.model.obstacles:
@@ -252,11 +249,18 @@ class Robot(Agent):  # La classe des agents
                 dist = self.get_distance_from(obstacle, (new_x, new_y))
                 if dist <= obstacle.r:
                     return True
+        
         return False
+    
+    def check_collision_borders(self, new_x, new_y):
+        if self.model.space.x_min <= new_x <= self.model.space.x_max:
+            if self.model.space.y_min <= new_y <= self.model.space.y_max:
+                return False
+        return True
 
     def check_collision(self):
         new_pos = self.compute_trajectory()
-        return self.check_collision_agent(*new_pos) or self.check_collision_obstacles(*new_pos)
+        return self.check_collision_agent(*new_pos) or self.check_collision_obstacles(*new_pos) or self.check_collision_borders(*new_pos)
     
     def get_markers(self):
         dangers, indications = [], []
@@ -344,10 +348,15 @@ class Robot(Agent):  # La classe des agents
         # Check Quicksands:
         self.check_quicksands()
         
-        # Check collisions (obstacles and agents):
-        while self.check_collision():
+        c = 0
+        stop = False
+        while(self.check_collision()):
             self.angle = np.random.uniform(0, 2*np.pi)
             self.avoiding_collision = True
+            c += 1
+            if c > 10:
+                stop = True
+                break
         
         if self.avoiding_collision:
             self.wander()

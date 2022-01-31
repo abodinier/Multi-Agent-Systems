@@ -200,10 +200,12 @@ class Robot(Agent):  # La classe des agents
     def mark_danger(self):
         marker = Marker(self.x, self.y, MarkerPurpose.DANGER)
         self.model.markers.append(marker)
+        self.ignore_steps_count = self.speed / 2
     
     def mark_indication(self, direction):
         marker = Marker(self.x, self.y, MarkerPurpose.INDICATION, direction=direction)
         self.model.markers.append(marker)
+        self.ignore_steps_count = self.speed / 2
     
     def check_quicksands(self):
         old_is_in_quicksand = self.is_in_quicksand
@@ -280,11 +282,10 @@ class Robot(Agent):  # La classe des agents
     def check_markers(self):
         dangers, indications = self.get_markers()
         
-        if dangers and self.ignore_steps_count == 0:
+        if dangers:
             danger = min(dangers, key=lambda x: x[1])[0]
             
             self.in_danger = True
-            
             (self.x, self.y), self.angle = go_to(
                 self.x, self.y, self.speed, danger.x, danger.y
             )
@@ -293,8 +294,9 @@ class Robot(Agent):  # La classe des agents
                 self.model.markers.remove(danger)
                 self.angle = - self.angle
                 self.in_danger = False
+                self.x, self.y = self.compute_trajectory()
 
-        if indications and self.ignore_steps_count == 0:
+        if indications:
             indication = min(indications, key=lambda x: x[1])[0]
             
             self.following_indication = True
@@ -307,6 +309,7 @@ class Robot(Agent):  # La classe des agents
                 self.model.markers.remove(indication)
                 self.angle = (self.angle + math.pi) % (2*math.pi)
                 self.following_indication = False
+                self.x, self.y = self.compute_trajectory()
     
     def demining(self):
         mines = []
@@ -324,7 +327,7 @@ class Robot(Agent):  # La classe des agents
             
             (self.x, self.y), self.angle = go_to(
                     self.x, self.y, self.speed, mine.x, mine.y
-                )
+            )
             
             if self.get_distance_from(mine) < EPS:
                 self.model.mines.remove(mine)

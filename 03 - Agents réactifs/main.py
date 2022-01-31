@@ -342,6 +342,8 @@ class Robot(Agent):  # La classe des agents
         new_x, new_y = self.compute_trajectory()  # Move
         self.x = new_x
         self.y = new_y
+        if self.proba_chgt_angle <= np.random.uniform(0, 1):
+            self.angle = np.random.uniform(0, 2*np.pi)
 
     def step(self):
         # TODO debug the collisions

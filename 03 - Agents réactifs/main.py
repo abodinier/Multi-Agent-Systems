@@ -360,16 +360,15 @@ class Robot(Agent):  # La classe des agents
                 stop = True
                 break
         
-        if self.avoiding_collision:
-            self.wander()
-            self.avoiding_collision = False
-        
-        else:
-            self.demining()
-        
-            if not self.deminage:
-                
-                self.check_markers()
+        if ~stop:
+            
+            if self.avoiding_collision:
+                self.wander()
+                self.avoiding_collision = False
+            
+            else:
+            
+                self.demining()
 
                 if not self.demining_in_progress:
                     

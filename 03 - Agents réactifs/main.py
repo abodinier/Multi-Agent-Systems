@@ -346,8 +346,6 @@ class Robot(Agent):  # La classe des agents
             self.angle = np.random.uniform(0, 2*np.pi)
 
     def step(self):
-        # TODO debug the collisions
-        # Check Quicksands:
         self.check_quicksands()
         
         c = 0

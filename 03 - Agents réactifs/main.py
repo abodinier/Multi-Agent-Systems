@@ -216,11 +216,11 @@ class Robot(Agent):  # La classe des agents
                 self.is_in_quicksand = True
                 return None
         
-        if old_is_in_quicksand == True and self.is_in_quicksand == False:
-            self.mark_danger()
-        
         self.is_in_quicksand = False
         self.speed = self.max_speed
+        
+        if old_is_in_quicksand == True and self.is_in_quicksand == False:
+            self.mark_danger()
 
     def compute_trajectory(self):
         new_x = max(min(self.x + math.cos(self.angle) * self.speed, self.model.space.x_max), self.model.space.x_min)

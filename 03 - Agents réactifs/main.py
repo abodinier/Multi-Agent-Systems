@@ -227,6 +227,7 @@ class Robot(Agent):  # La classe des agents
             if self.get_distance_from(quicksand) <= quicksand.r:
                 self.speed = self.max_speed / 2
                 self.is_in_quicksand = True
+                self.model.in_quicksands += 1
                 return None
         
         self.is_in_quicksand = False
@@ -389,6 +390,7 @@ class Robot(Agent):  # La classe des agents
             
             if self.get_distance_from(mine) < EPS:
                 self.model.mines.remove(mine)
+                self.model.mine_counter += 1
                 self.mark_indication(direction=self.angle)
                 self.demining_in_progress = False
 
@@ -451,6 +453,8 @@ class MinedZone(Model):
                                                           m.purpose == MarkerPurpose.DANGER]),
                          "Indication markers": lambda model: len([m for m in model.markers if
                                                           m.purpose == MarkerPurpose.INDICATION]),
+                         "Mine counter": lambda model: model.mine_counter,
+                         "In quicksands": lambda model: model.in_quicksands,
                          },
         agent_reporters={})
 
@@ -462,6 +466,8 @@ class MinedZone(Model):
         self.markers = []  # Access list of markers from robot through self.model.markers (both read and write)
         self.obstacles = []  # Access list of obstacles from robot through self.model.obstacles
         self.quicksands = []  # Access list of quicksands from robot through self.model.quicksands
+        self.mine_counter = 0
+        self.in_quicksands = 0
         for _ in range(n_obstacles):
             self.obstacles.append(Obstacle(random.random() * 500, random.random() * 500, 10 + 20 * random.random()))
         for _ in range(n_quicksand):
@@ -495,7 +501,11 @@ def run_single_server():
                          {"Label": "Danger markers",
                           "Color": "Red"},
                          {"Label": "Indication markers",
-                          "Color": "Green"}
+                          "Color": "Green"},
+                         {"Label": "Mine counter",
+                          "Color": "black"},
+                         {"Label": "In quicksands",
+                          "Color": "Blue"}
                          ],
                         data_collector_name='datacollector')
     server = ModularServer(MinedZone,

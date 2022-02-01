@@ -233,7 +233,7 @@ class Robot(Agent):  # La classe des agents
         self.is_in_quicksand = False
         self.speed = self.max_speed
         
-        if old_is_in_quicksand == True and self.is_in_quicksand == False:
+        if old_is_in_quicksand == True and self.is_in_quicksand == False and self.ignore_steps_count == 0:
             self.mark_danger()
 
     def compute_trajectory(self):
